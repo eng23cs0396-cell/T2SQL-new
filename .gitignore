@@ -1,0 +1,27 @@
+# Environment variables & API keys
+.env
+.env.local
+
+# Python virtual environment
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Node.js & Vite build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+
+# Model checkpoints & large weights
+outputs/checkpoints/
+outputs/logs/
+*.pt
+*.bin
+data/raw/*.zip
+data/raw/*.parquet

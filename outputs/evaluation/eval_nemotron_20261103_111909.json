@@ -1,0 +1,78 @@
+{
+  "model_type": "nemotron",
+  "timestamp": "2026-11-03T11:19:09.305789",
+  "total_test_cases": 5,
+  "api_success_rate": 100.0,
+  "sql_validity_rate": 100.0,
+  "execution_success_rate": 100.0,
+  "execution_accuracy": 100.0,
+  "avg_generation_time_ms": 692.71,
+  "gpu_status": null,
+  "detailed_results": [
+    {
+      "case_id": "val_381",
+      "db_id": "course_teach",
+      "question": "How many teachers are there?",
+      "gold_sql": "SELECT count(*) FROM teacher",
+      "predicted_sql": "SELECT COUNT(*) FROM teacher",
+      "api_success": true,
+      "valid_sql": true,
+      "execution_success": true,
+      "execution_accuracy": true,
+      "latency_ms": 946.89,
+      "error": null
+    },
+    {
+      "case_id": "val_382",
+      "db_id": "course_teach",
+      "question": "What is the total count of teachers?",
+      "gold_sql": "SELECT count(*) FROM teacher",
+      "predicted_sql": "SELECT COUNT(*) FROM teacher",
+      "api_success": true,
+      "valid_sql": true,
+      "execution_success": true,
+      "execution_accuracy": true,
+      "latency_ms": 457.76,
+      "error": null
+    },
+    {
+      "case_id": "val_383",
+      "db_id": "course_teach",
+      "question": "List the names of teachers in ascending order of age.",
+      "gold_sql": "SELECT Name FROM teacher ORDER BY Age ASC",
+      "predicted_sql": "SELECT t.Name FROM teacher t ORDER BY t.Age ASC",
+      "api_success": true,
+      "valid_sql": true,
+      "execution_success": true,
+      "execution_accuracy": true,
+      "latency_ms": 559.72,
+      "error": null
+    },
+    {
+      "case_id": "val_384",
+      "db_id": "course_teach",
+      "question": "What are the names of the teachers ordered by ascending age?",
+      "gold_sql": "SELECT Name FROM teacher ORDER BY Age ASC",
+      "predicted_sql": "SELECT t.Name FROM teacher t ORDER BY t.Age ASC",
+      "api_success": true,
+      "valid_sql": true,
+      "execution_success": true,
+      "execution_accuracy": true,
+      "latency_ms": 815.21,
+      "error": null
+    },
+    {
+      "case_id": "val_385",
+      "db_id": "course_teach",
+      "question": "What are the age and hometown of teachers?",
+      "gold_sql": "SELECT Age ,  Hometown FROM teacher",
+      "predicted_sql": "SELECT teacher.Age, teacher.Hometown FROM teacher",
+      "api_success": true,
+      "valid_sql": true,
+      "execution_success": true,
+      "execution_accuracy": true,
+      "latency_ms": 683.97,
+      "error": null
+    }
+  ]
+}
