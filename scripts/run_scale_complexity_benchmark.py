@@ -17,6 +17,7 @@ import json
 import os
 import sqlite3
 import sys
+import time
 from datetime import datetime
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -1153,7 +1154,11 @@ def run_model(model_type, cases=None):
             raise SystemExit(f"Gold execution failed for {case['id']}: {gold_exec['error']}")
 
         if model_type == "nemotron":
+            time.sleep(1.2)
             gen = nemotron.generate_sql(schema_text, case["question"])
+            if gen.get("error") and "rate limit" in str(gen.get("error")).lower():
+                time.sleep(3.5)
+                gen = nemotron.generate_sql(schema_text, case["question"])
         elif model_type == "qwen_few_shot":
             gen = qwen.generate_sql(schema_text, case["question"], mode="few_shot", num_few_shot_examples=3)
         elif model_type == "qwen_lora":

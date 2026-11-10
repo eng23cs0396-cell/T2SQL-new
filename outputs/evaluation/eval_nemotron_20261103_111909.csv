@@ -1,6 +1,0 @@
-case_id,db_id,question,gold_sql,predicted_sql,api_success,valid_sql,execution_success,execution_accuracy,latency_ms,error
-val_381,course_teach,How many teachers are there?,SELECT count(*) FROM teacher,SELECT COUNT(*) FROM teacher,True,True,True,True,946.89,
-val_382,course_teach,What is the total count of teachers?,SELECT count(*) FROM teacher,SELECT COUNT(*) FROM teacher,True,True,True,True,457.76,
-val_383,course_teach,List the names of teachers in ascending order of age.,SELECT Name FROM teacher ORDER BY Age ASC,SELECT t.Name FROM teacher t ORDER BY t.Age ASC,True,True,True,True,559.72,
-val_384,course_teach,What are the names of the teachers ordered by ascending age?,SELECT Name FROM teacher ORDER BY Age ASC,SELECT t.Name FROM teacher t ORDER BY t.Age ASC,True,True,True,True,815.21,
-val_385,course_teach,What are the age and hometown of teachers?,"SELECT Age ,  Hometown FROM teacher","SELECT teacher.Age, teacher.Hometown FROM teacher",True,True,True,True,683.97,

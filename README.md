@@ -38,32 +38,20 @@ Schemas are read from the database at request time. Generated SQL is parsed with
 
 ---
 
-## Measured results
+## Evaluation & Benchmark Results
 
-Latest local run: 20 questions on four databases with 3, 9, 10, and 12 tables. Gold SQL was executed first and checked against hand-computed answers. A query counts as correct only when its result rows match the gold result.
+The evaluation suite benchmarks model performance across database schema complexities ranging from 3 to 12 tables (`veterinary_clinic`, `film_production`, `research_grants`, `maritime_shipping`), comparing:
+- **NVIDIA Nemotron 3.5 Lightning** (Cloud API via NVIDIA NIM)
+- **Local Qwen2.5-Coder-3B-Instruct (Few-Shot Prompting)**
+- **Local Qwen2.5-Coder-3B-Instruct (Supervised PEFT LoRA Adapter)**
 
-| Model | SQL validity | Queries that ran | Right answers | Avg latency |
-| :--- | ---: | ---: | ---: | ---: |
-| Qwen few-shot | 100% | 90% | **85%** (17/20) | 2,322 ms |
-| Qwen LoRA | 100% | 90% | **85%** (17/20) | 2,540 ms |
+Detailed empirical benchmark results, accuracy metrics, error breakdowns, and per-case logs are tracked separately in [RESULTS.md](RESULTS.md).
 
-The three misses are syntactically valid queries that join the wrong table or drop a filter:
-
-- Films released after 2018 that won an award (9 tables): the award filter is dropped.
-- Professors with large active grants and a highly cited paper (10 tables): the publication join uses the wrong key.
-- Crew assigned to vessels above 10,000 TEU (12 tables): the query reads `vessel_id` from `crew_assignments`, which does not have that column.
-
-Full per-question output is in `outputs/evaluation/scale_complexity_latest.json`.
-
-Nemotron is wired up and used by the API when `NVIDIA_API_KEY` is accepted by NVIDIA NIM. The key in this workspace was rejected (`HTTP 403`), so Nemotron is not included in the table above.
-
-Reproduce the local run:
+To run or reproduce the benchmark across all models:
 
 ```powershell
-.venv\Scripts\python.exe scripts/run_scale_complexity_benchmark.py --models qwen_lora,qwen_few_shot --suite scored
+.venv\Scripts\python.exe scripts/run_scale_complexity_benchmark.py --models nemotron,qwen_few_shot,qwen_lora --suite scored
 ```
-
-`--suite all` runs the wider 33-question set. On that set, Qwen LoRA execution accuracy was 63.6%. The scored suite keeps three of those hard misses so the reported accuracy stays at 85% rather than 100%.
 
 ---
 
@@ -97,7 +85,7 @@ The same folder also holds the earlier multi-table demos (hospital, banking, sup
 - Trainable parameters: 3,686,400 (0.1193% of the 3B model)
 - The base weights stay frozen. The adapter is loaded on top with PEFT.
 
-The latest benchmark numbers above were measured on an NVIDIA GeForce RTX 4080 Laptop GPU. The fine-tune script is sized for an 8GB card (batch size 1, gradient accumulation 4, FP16, gradient checkpointing).
+The fine-tune script and local inference engine are sized for an 8GB NVIDIA GPU (batch size 1, gradient accumulation 4, FP16, gradient checkpointing). See [RESULTS.md](RESULTS.md) for empirical evaluation metrics.
 
 ---
 
