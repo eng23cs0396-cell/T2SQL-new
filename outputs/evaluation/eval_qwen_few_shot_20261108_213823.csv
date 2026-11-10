@@ -1,0 +1,74 @@
+case_id,db_id,question,gold_sql,predicted_sql,api_success,valid_sql,execution_success,execution_accuracy,latency_ms,error
+hosp_01,hospital_management,"Which departments have an average doctor salary greater than 200000, and what is their average doctor salary?","SELECT d.dept_name, AVG(doc.salary) FROM departments d JOIN doctors doc ON d.dept_id = doc.dept_id GROUP BY d.dept_name HAVING AVG(doc.salary) > 200000","SELECT T1.dept_name, AVG(T2.salary) AS avg_salary FROM departments AS T1 JOIN doctors AS T2 ON T1.dept_id = T2.dept_id GROUP BY T1.dept_id, T1.dept_name HAVING AVG(T2.salary) > 200000",True,True,True,True,7905.39,
+hosp_02,hospital_management,What is the total billing amount for patient Arthur Pendelton?,SELECT SUM(a.billing_amount) FROM appointments a JOIN patients p ON a.patient_id = p.patient_id WHERE p.first_name = 'Arthur' AND p.last_name = 'Pendelton',SELECT SUM(billing_amount) AS total_billing_amount FROM appointments WHERE patient_id = (SELECT patient_id FROM patients WHERE first_name = 'Arthur' AND last_name = 'Pendelton'),True,True,True,True,1359.69,
+hosp_03,hospital_management,"Find the distinct first names, last names, and specialties of doctors who have billed more than the average billing amount across all appointments.","SELECT DISTINCT doc.first_name, doc.last_name, doc.specialty FROM doctors doc JOIN appointments a ON doc.doctor_id = a.doctor_id WHERE a.billing_amount > (SELECT AVG(billing_amount) FROM appointments)","SELECT DISTINCT T1.first_name, T1.last_name, T2.specialty
+FROM doctors AS T1
+JOIN appointments AS T2 ON T1.doctor_id = T2.doctor_id
+WHERE T2.billing_amount > (SELECT AVG(billing_amount) FROM appointments)",True,True,False,False,2127.86,no such column: T2.specialty
+bank_01,fintech_banking,What is the total account balance for each customer in New York?,"SELECT c.first_name, c.last_name, SUM(a.balance) FROM customers c JOIN accounts a ON c.customer_id = a.customer_id WHERE c.city = 'New York' GROUP BY c.customer_id, c.first_name, c.last_name","SELECT c.first_name, c.last_name, SUM(a.balance) AS total_balance
+FROM customers AS c
+JOIN accounts AS a ON c.customer_id = a.customer_id
+WHERE c.city = 'New York'
+GROUP BY c.customer_id, c.first_name, c.last_name",True,True,True,True,1998.96,
+bank_02,fintech_banking,List the account IDs and balances for all active checking accounts.,"SELECT account_id, balance FROM accounts WHERE account_type = 'Checking' AND status = 'Active'","SELECT account_id, balance FROM accounts WHERE account_type = 'Checking' AND status = 'Active'",True,True,True,True,868.12,
+bank_03,fintech_banking,List all customers who do not have any Investment accounts.,"SELECT first_name, last_name, email FROM customers WHERE customer_id NOT IN (SELECT customer_id FROM accounts WHERE account_type = 'Investment')","SELECT DISTINCT c.first_name, c.last_name
+FROM customers c
+LEFT JOIN accounts a ON c.customer_id = a.customer_id
+WHERE a.account_type != 'Investment'",True,True,True,False,1376.67,
+sc_01,supply_chain,What is the total quantity of products on hand in the Rotterdam Euro Hub warehouse?,SELECT SUM(i.quantity_on_hand) FROM inventory i JOIN warehouses w ON i.warehouse_id = w.warehouse_id WHERE w.warehouse_name = 'Rotterdam Euro Hub',SELECT SUM(quantity_on_hand) AS total_quantity FROM inventory WHERE warehouse_id = (SELECT warehouse_id FROM warehouses WHERE warehouse_name = 'Rotterdam Euro Hub'),True,True,True,True,1110.9,
+sc_02,supply_chain,List the product names and unit prices for all products supplied by Kyoto Sensor Corp.,"SELECT p.product_name, p.unit_price FROM products p JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE s.company_name LIKE 'Kyoto Sensor Corp%'","SELECT p.product_name, p.unit_price FROM products AS p JOIN suppliers AS s ON p.supplier_id = s.supplier_id JOIN inventory AS i ON p.product_id = i.product_id WHERE s.company_name = 'Kyoto Sensor Corp'",True,True,True,False,1639.32,
+sc_03,supply_chain,List the supplier company names and their total purchase order amounts for all suppliers with a total purchase order amount greater than 50000 dollars.,"SELECT s.company_name, SUM(po.total_amount) FROM suppliers s JOIN purchase_orders po ON s.supplier_id = po.supplier_id GROUP BY s.supplier_id, s.company_name HAVING SUM(po.total_amount) > 50000","SELECT T1.company_name, SUM(T2.total_amount) AS total_purchase_order_amount FROM suppliers AS T1 JOIN purchase_orders AS T2 ON T1.supplier_id = T2.supplier_id GROUP BY T1.supplier_id, T1.company_name HAVING total_purchase_order_amount > 50000",True,True,True,True,2341.44,
+air_01,airline_flight_ops,What is the total revenue generated from First class tickets for each airline?,"SELECT al.airline_name, SUM(t.fare_paid) FROM tickets t JOIN flights f ON t.flight_id = f.flight_id JOIN airlines al ON f.airline_id = al.airline_id WHERE t.ticket_class = 'First' GROUP BY al.airline_id, al.airline_name","SELECT 
+    a.airline_name,
+    SUM(t.fare_paid) AS total_revenue
+FROM 
+    airlines a
+JOIN 
+    flights f ON a.airline_id = f.airline_id
+JOIN 
+    tickets t ON f.flight_id = t.flight_id
+WHERE 
+    t.ticket_class = 'First'
+GROUP BY 
+    a.airline_name",True,True,True,True,2689.89,
+air_02,airline_flight_ops,List the flight numbers and base fares for all flights departing from JFK.,"SELECT flight_number, base_fare FROM flights WHERE origin_code = 'JFK'","SELECT f.flight_number, f.base_fare
+FROM flights f
+JOIN airports a ON f.origin_code = a.airport_code
+WHERE a.airport_name = 'JFK'",True,True,True,False,1407.24,
+air_03,airline_flight_ops,"Find the flight number, airline name, origin city, and destination city for all flights operated by Boeing aircraft.","SELECT f.flight_number, al.airline_name, a_orig.city AS origin_city, a_dest.city AS dest_city FROM flights f JOIN airlines al ON f.airline_id = al.airline_id JOIN aircraft ac ON f.aircraft_id = ac.aircraft_id JOIN airports a_orig ON f.origin_code = a_orig.airport_code JOIN airports a_dest ON f.dest_code = a_dest.airport_code WHERE ac.manufacturer = 'Boeing'","SELECT f.flight_number, a.airline_name, a.city AS origin_city, b.city AS dest_city
+FROM flights f
+JOIN aircraft a ON f.aircraft_id = a.aircraft_id
+JOIN airlines al ON a.airline_id = al.airline_id
+JOIN airports a ON f.origin_code = a.airport_code
+JOIN airports b ON f.dest_code = b.airport_code
+WHERE a.manufacturer = 'Boeing'",True,True,False,False,3470.89,no such column: a.airline_name
+hotel_01,hotel_resort,"List the first names, last names, and loyalty tiers for all guests who have spent more than 25000 dollars.","SELECT first_name, last_name, loyalty_tier FROM guests WHERE total_spend > 25000","SELECT T1.first_name, T1.last_name, T1.loyalty_tier FROM guests AS T1 JOIN reservations AS T2 ON T1.guest_id = T2.guest_id WHERE T1.total_spend > 25000",True,True,True,False,2099.14,
+hotel_02,hotel_resort,"Which amenity categories have generated more than 1000 dollars in total charges across all reservations, and what is the total charge?","SELECT a.category, SUM(u.total_charge) FROM amenity_usage u JOIN amenities a ON u.amenity_id = a.amenity_id GROUP BY a.category HAVING SUM(u.total_charge) > 1000","SELECT A.category, SUM(AU.total_charge) AS total_charge
+FROM amenities AS A
+JOIN amenity_usage AS AU ON A.amenity_id = AU.amenity_id
+GROUP BY A.category
+HAVING SUM(AU.total_charge) > 1000",True,True,True,True,2253.51,
+hotel_03,hotel_resort,"List the guest name, resort name, and room number for all reservations with a paid status.","SELECT g.first_name, g.last_name, res.resort_name, r.room_number FROM reservations rv JOIN guests g ON rv.guest_id = g.guest_id JOIN rooms r ON rv.room_id = r.room_id JOIN resorts res ON r.resort_id = res.resort_id WHERE rv.payment_status = 'Paid'","SELECT T3.first_name, T3.last_name, T4.resort_name, T4.room_number FROM reservations AS T1 JOIN guests AS T3 ON T1.guest_id = T3.guest_id JOIN rooms AS T4 ON T1.room_id = T4.room_id WHERE T1.payment_status = 'Paid'",True,True,False,False,2247.74,no such column: T4.resort_name
+uni_01,university,Find the names of students who have scored above 90 in Database Systems.,SELECT s.name FROM students s JOIN enrollments e ON s.student_id = e.student_id JOIN courses c ON e.course_id = c.course_id WHERE c.title = 'Database Systems' AND e.score > 90,"SELECT s.name 
+FROM students AS s 
+JOIN enrollments AS e ON s.student_id = e.student_id 
+JOIN courses AS c ON e.course_id = c.course_id 
+WHERE c.title = 'Database Systems' AND e.score > 90",True,True,True,True,2021.66,
+uni_02,university,What is the average GPA of students in each department that has a budget over 800000?,"SELECT d.department_name, AVG(s.gpa) FROM departments d JOIN students s ON d.department_id = s.department_id WHERE d.budget > 800000 GROUP BY d.department_id, d.department_name","SELECT d.department_name, AVG(s.gpa) 
+FROM students AS s 
+JOIN departments AS d ON s.department_id = d.department_id 
+WHERE d.budget > 800000 
+GROUP BY d.department_name",True,True,True,True,1850.42,
+ecom_01,ecommerce,"List the product name, category, and total quantity ordered for all products in the Electronics category.","SELECT p.product_name, c.category_name, SUM(oi.quantity) FROM products p JOIN categories c ON p.category_id = c.category_id JOIN order_items oi ON p.product_id = oi.product_id WHERE c.category_name = 'Electronics' GROUP BY p.product_id, p.product_name, c.category_name","SELECT p.product_name, c.category_name, SUM(oi.quantity) AS total_quantity_ordered
+FROM products AS p
+JOIN categories AS c ON p.category_id = c.category_id
+JOIN order_items AS oi ON p.product_id = oi.product_id
+WHERE c.category_name = 'Electronics'
+GROUP BY p.product_name, c.category_name",True,True,True,True,3190.62,
+ecom_02,ecommerce,Find the customer name and total amount spent across all delivered orders.,"SELECT c.name, SUM(o.total_amount) AS total_spent FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Delivered' GROUP BY c.customer_id, c.name","SELECT T1.name, SUM(T2.total_amount) AS total_spent
+FROM customers AS T1
+JOIN orders AS T2 ON T1.customer_id = T2.customer_id
+WHERE T2.status = 'Delivered'
+GROUP BY T1.customer_id, T1.name
+ORDER BY total_spent DESC",True,True,True,True,2508.74,
+course_01,course_teach,List the names of teachers in ascending order of age.,SELECT Name FROM teacher ORDER BY Age ASC,SELECT Name FROM teacher ORDER BY Age ASC,True,True,True,True,562.04,

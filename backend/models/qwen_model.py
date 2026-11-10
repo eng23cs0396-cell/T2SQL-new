@@ -8,6 +8,11 @@ import os
 import gc
 import time
 from typing import Dict, Any, Optional
+
+# Ensure offline loading from local cache without network timeouts
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
@@ -70,21 +75,37 @@ class LocalQwenEngine:
             return
 
         print(f"Loading {self.MODEL_ID} on {self.device}...")
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.MODEL_ID,
-            trust_remote_code=True
-        )
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.MODEL_ID,
+                trust_remote_code=True,
+                local_files_only=True
+            )
+        except Exception:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.MODEL_ID,
+                trust_remote_code=True
+            )
 
         dtype = torch.bfloat16 if (torch.cuda.is_available() and torch.cuda.is_bf16_supported()) else torch.float16
         if self.device == "cpu":
             dtype = torch.float32
 
-        self.base_model = AutoModelForCausalLM.from_pretrained(
-            self.MODEL_ID,
-            torch_dtype=dtype,
-            device_map="auto" if self.device == "cuda" else None,
-            trust_remote_code=True
-        )
+        try:
+            self.base_model = AutoModelForCausalLM.from_pretrained(
+                self.MODEL_ID,
+                torch_dtype=dtype,
+                device_map="auto" if self.device == "cuda" else None,
+                trust_remote_code=True,
+                local_files_only=True
+            )
+        except Exception:
+            self.base_model = AutoModelForCausalLM.from_pretrained(
+                self.MODEL_ID,
+                torch_dtype=dtype,
+                device_map="auto" if self.device == "cuda" else None,
+                trust_remote_code=True
+            )
 
         if self.device != "cuda":
             self.base_model.to(self.device)

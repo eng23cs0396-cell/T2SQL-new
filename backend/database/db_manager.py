@@ -93,7 +93,7 @@ class DatabaseManager:
         }
 
     def _ensure_sample_databases(self):
-        """Seed rich realistic sample databases (University, E-Commerce, Hospital) if storage is empty."""
+        """Seed rich realistic sample databases across varied domain schemas."""
         uni_db = os.path.join(self.storage_dir, "university.db")
         if not os.path.exists(uni_db):
             self._create_university_db(uni_db)
@@ -101,6 +101,106 @@ class DatabaseManager:
         ecom_db = os.path.join(self.storage_dir, "ecommerce.db")
         if not os.path.exists(ecom_db):
             self._create_ecommerce_db(ecom_db)
+
+        hosp_db = os.path.join(self.storage_dir, "hospital_management.db")
+        if not os.path.exists(hosp_db):
+            from scripts.create_multi_table_databases import create_hospital_db
+            create_hospital_db()
+
+        bank_db = os.path.join(self.storage_dir, "fintech_banking.db")
+        if not os.path.exists(bank_db):
+            from scripts.create_multi_table_databases import create_fintech_db
+            create_fintech_db()
+
+        sc_db = os.path.join(self.storage_dir, "supply_chain.db")
+        if not os.path.exists(sc_db):
+            from scripts.create_multi_table_databases import create_supply_chain_db
+            create_supply_chain_db()
+
+        air_db = os.path.join(self.storage_dir, "airline_flight_ops.db")
+        if not os.path.exists(air_db):
+            from scripts.create_multi_table_databases import create_airline_db
+            create_airline_db()
+
+        hotel_db = os.path.join(self.storage_dir, "hotel_resort.db")
+        if not os.path.exists(hotel_db):
+            from scripts.create_multi_table_databases import create_hotel_resort_db
+            create_hotel_resort_db()
+
+        stream_db = os.path.join(self.storage_dir, "streaming_entertainment.db")
+        if not os.path.exists(stream_db):
+            from scripts.create_more_datasets import create_streaming_db
+            create_streaming_db()
+
+        ride_db = os.path.join(self.storage_dir, "rideshare_mobility.db")
+        if not os.path.exists(ride_db):
+            from scripts.create_more_datasets import create_rideshare_db
+            create_rideshare_db()
+
+        re_db = os.path.join(self.storage_dir, "real_estate_property.db")
+        if not os.path.exists(re_db):
+            from scripts.create_more_datasets import create_real_estate_db
+            create_real_estate_db()
+
+        tel_db = os.path.join(self.storage_dir, "telecom_network_ops.db")
+        if not os.path.exists(tel_db):
+            from scripts.create_more_datasets import create_telecom_db
+            create_telecom_db()
+
+        energy_db = os.path.join(self.storage_dir, "smart_energy_grid.db")
+        if not os.path.exists(energy_db):
+            from scripts.create_more_datasets import create_smart_energy_db
+            create_smart_energy_db()
+
+        crypto_db = os.path.join(self.storage_dir, "crypto_exchange_market.db")
+        if not os.path.exists(crypto_db):
+            from scripts.create_more_datasets import create_crypto_market_db
+            create_crypto_market_db()
+
+        git_db = os.path.join(self.storage_dir, "software_dev_git_tracker.db")
+        if not os.path.exists(git_db):
+            from scripts.create_more_datasets import create_git_tracker_db
+            create_git_tracker_db()
+
+        esports_db = os.path.join(self.storage_dir, "gaming_esports_league.db")
+        if not os.path.exists(esports_db):
+            from scripts.create_even_more_datasets import create_esports_db
+            create_esports_db()
+
+        log_db = os.path.join(self.storage_dir, "logistics_warehouse_inventory.db")
+        if not os.path.exists(log_db):
+            from scripts.create_even_more_datasets import create_logistics_warehouse_db
+            create_logistics_warehouse_db()
+
+        clin_db = os.path.join(self.storage_dir, "healthcare_clinical_trials.db")
+        if not os.path.exists(clin_db):
+            from scripts.create_even_more_datasets import create_clinical_trials_db
+            create_clinical_trials_db()
+
+        ins_db = os.path.join(self.storage_dir, "fintech_insurance_claims.db")
+        if not os.path.exists(ins_db):
+            from scripts.create_even_more_datasets import create_insurance_claims_db
+            create_insurance_claims_db()
+
+        cloud_db = os.path.join(self.storage_dir, "cloud_devops_infrastructure.db")
+        if not os.path.exists(cloud_db):
+            from scripts.create_even_more_datasets import create_cloud_devops_db
+            create_cloud_devops_db()
+
+        food_db = os.path.join(self.storage_dir, "restaurant_food_delivery.db")
+        if not os.path.exists(food_db):
+            from scripts.create_even_more_datasets import create_food_delivery_db
+            create_food_delivery_db()
+
+        transit_db = os.path.join(self.storage_dir, "smart_city_transportation.db")
+        if not os.path.exists(transit_db):
+            from scripts.create_even_more_datasets import create_smart_city_transit_db
+            create_smart_city_transit_db()
+
+        music_db = os.path.join(self.storage_dir, "digital_music_streaming.db")
+        if not os.path.exists(music_db):
+            from scripts.create_even_more_datasets import create_digital_music_db
+            create_digital_music_db()
 
     def _create_university_db(self, path: str):
         conn = sqlite3.connect(path)
@@ -224,7 +324,7 @@ class DatabaseManager:
                 customer_id INTEGER NOT NULL,
                 order_date TEXT NOT NULL,
                 total_amount REAL NOT NULL,
-                status TEXT NOT NULL,
+                status TEXT COLLATE NOCASE NOT NULL,
                 FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
             );
 

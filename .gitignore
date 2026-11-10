@@ -1,8 +1,12 @@
-# Environment variables & API keys
+# Secrets
 .env
 .env.local
+.env.*.local
+backend/.env
+!.env.example
+!backend/.env.example
 
-# Python virtual environment
+# Python
 .venv/
 venv/
 ENV/
@@ -11,17 +15,55 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.ipynb_checkpoints/
 
-# Node.js & Vite build artifacts
-frontend/node_modules/
+# Node / Vite
+node_modules/
 frontend/dist/
+frontend/dist-ssr/
 frontend/.vite/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Model checkpoints & large weights
+# Local model caches and training artifacts
 outputs/checkpoints/
 outputs/logs/
+.cache/
+hf_cache/
 *.pt
 *.bin
+*.onnx
+
+# SQLite sidecars (the .db / .sqlite files themselves are part of the demo)
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Raw dataset archives
 data/raw/*.zip
 data/raw/*.parquet
+data/raw/*.tar
+data/raw/*.gz

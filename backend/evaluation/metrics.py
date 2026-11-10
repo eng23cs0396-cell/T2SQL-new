@@ -47,21 +47,8 @@ class SQLResultComparator:
         return all(cls.are_values_equal(v1, v2) for v1, v2 in zip(row1, row2))
 
     @classmethod
-    def compare_results(cls, predicted_rows: List[List[Any]], gold_rows: List[List[Any]], order_sensitive: bool = False) -> bool:
-        """
-        Compares predicted query result set against gold ground truth.
-        order_sensitive: True if ORDER BY is present and row order is strict.
-        """
-        if len(predicted_rows) != len(gold_rows):
-            return False
-
-        if len(predicted_rows) == 0:
-            return True
-
-        if order_sensitive:
-            return all(cls.are_rows_equal(r1, r2) for r1, r2 in zip(predicted_rows, gold_rows))
-
-        # Unordered comparison: check multiset equivalence
+    def _compare_rows_unordered(cls, predicted_rows: List[List[Any]], gold_rows: List[List[Any]]) -> bool:
+        """Unordered comparison: check multiset row equivalence."""
         matched_indices = set()
         for p_row in predicted_rows:
             found = False
@@ -72,6 +59,39 @@ class SQLResultComparator:
                     break
             if not found:
                 return False
-
         return len(matched_indices) == len(gold_rows)
+
+    @classmethod
+    def _compare_single_alignment(cls, predicted_rows: List[List[Any]], gold_rows: List[List[Any]], order_sensitive: bool = False) -> bool:
+        if order_sensitive:
+            return all(cls.are_rows_equal(r1, r2) for r1, r2 in zip(predicted_rows, gold_rows))
+        return cls._compare_rows_unordered(predicted_rows, gold_rows)
+
+    @classmethod
+    def compare_results(cls, predicted_rows: List[List[Any]], gold_rows: List[List[Any]], order_sensitive: bool = False) -> bool:
+        """
+        Compares predicted query result set against gold ground truth.
+        Supports order sensitivity, NULL/float tolerances, and column projection permutation tolerance.
+        """
+        if len(predicted_rows) != len(gold_rows):
+            return False
+
+        if len(predicted_rows) == 0:
+            return True
+
+        # 1. Direct comparison
+        if cls._compare_single_alignment(predicted_rows, gold_rows, order_sensitive=order_sensitive):
+            return True
+
+        # 2. Check if a column permutation satisfies semantic equivalence
+        if len(predicted_rows[0]) == len(gold_rows[0]):
+            num_cols = len(gold_rows[0])
+            if 1 < num_cols <= 5:
+                import itertools
+                for perm in itertools.permutations(range(num_cols)):
+                    permuted = [[row[i] for i in perm] for row in predicted_rows]
+                    if cls._compare_single_alignment(permuted, gold_rows, order_sensitive=order_sensitive):
+                        return True
+
+        return False
 

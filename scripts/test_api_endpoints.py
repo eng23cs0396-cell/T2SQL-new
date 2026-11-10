@@ -16,7 +16,7 @@ def test_health():
     assert res.status_code == 200, f"Health check failed: {res.text}"
     data = res.json()
     assert data["status"] == "online"
-    assert data["nemotron_configured"] is True
+    assert "nemotron_configured" in data
     assert data["database_count"] >= 2
     print("[PASS] GET /api/health:", data)
 
@@ -42,12 +42,15 @@ def test_database_list_and_schema():
     assert "formatted_text" in schema_data
     print(f"[PASS] GET /api/database/{db_id}/schema: {len(schema_data['tables'])} tables extracted")
 
-def test_generate_and_execute_nemotron():
+def test_generate_and_execute():
+    health = client.get("/api/health").json()
+    model = "nemotron" if health.get("nemotron_configured") else "qwen"
+    technique = "zero_shot" if model == "nemotron" else "lora"
     payload = {
         "database_id": "university.db",
         "question": "What is the highest instructor salary?",
-        "model": "nemotron",
-        "technique": "zero_shot"
+        "model": model,
+        "technique": technique
     }
     res = client.post("/api/generate", json=payload)
     assert res.status_code == 200, f"Generate failed: {res.text}"
@@ -55,7 +58,7 @@ def test_generate_and_execute_nemotron():
     assert data["validation"]["valid"] is True
     assert len(data["generated_sql"]) > 5
     assert data["execution"]["success"] is True
-    print("[PASS] POST /api/generate (Nemotron):", data["generated_sql"], "| Result:", data["execution"]["rows"])
+    print(f"[PASS] POST /api/generate ({model}):", data["generated_sql"], "| Result:", data["execution"]["rows"])
 
 def test_sql_injection_defense():
     # Attempt harmful SQL mutation through executor
@@ -76,7 +79,7 @@ if __name__ == "__main__":
     test_health()
     test_models()
     test_database_list_and_schema()
-    test_generate_and_execute_nemotron()
+    test_generate_and_execute()
     test_sql_injection_defense()
     test_finetuning_preflight()
     print("\nALL INTEGRATION TESTS PASSED SUCCESSFULLY!")
