@@ -45,10 +45,16 @@ The platform requires two mandatory inputs: an arbitrary SQLite database and a n
   - Executes `PRAGMA table_info("{table}")` to dynamically extract column names, SQLite data types (`TEXT`, `INTEGER`, `REAL`), nullability, and primary key flags.
   - Executes `PRAGMA foreign_key_list("{table}")` to map relational constraints (`from_table.from_col` $\to$ `to_table.to_col`).
   - Generates a compact, prompt-friendly schema representation automatically injected into downstream prompts.
-- **Seeded Starter Databases**:
-  - `university.db`: Realistic academic database (students, departments, instructors, courses, enrollments).
-  - `ecommerce.db`: Commercial retail database (customers, products, categories, orders, order_items).
-  - Plus 7 Spider databases extracted from the official benchmark: `department_management`, `concert_singer`, `course_teach`, `car_1`, `flight_2`, `world_1`, `student_transcripts_tracking`.
+- **Seeded Starter Databases & Multi-Domain Suite (33 Databases)**:
+  - `university.db` & `ecommerce.db`: Academic and commercial seed databases.
+  - 7 Spider core benchmark databases: `department_management`, `concert_singer`, `course_teach`, `car_1`, `flight_2`, `world_1`, `student_transcripts_tracking`.
+  - 24 Enterprise & Vertical domain databases scaling from 3 to 12 tables:
+    - *Enterprise & Infrastructure*: `cloud_devops_infrastructure.db`, `software_dev_git_tracker.db`, `telecom_network_ops.db`
+    - *Fintech & Banking*: `fintech_banking.db`, `fintech_insurance_claims.db`, `crypto_exchange_market.db`
+    - *Logistics & Mobility*: `maritime_shipping.db` (12 tables), `airline_flight_ops.db`, `logistics_warehouse_inventory.db`, `rideshare_mobility.db`, `smart_city_transportation.db`
+    - *Media & Entertainment*: `film_production.db` (9 tables), `digital_music_streaming.db`, `gaming_esports_league.db`, `streaming_entertainment.db`
+    - *Healthcare & Research*: `research_grants.db` (10 tables), `healthcare_clinical_trials.db`, `hospital_management.db`, `veterinary_clinic.db` (3 tables)
+    - *Commerce & Hospitality*: `hotel_resort.db`, `restaurant_food_delivery.db`, `real_estate_property.db`, `supply_chain.db`, `smart_energy_grid.db`
 
 ### 3.2 SQL Safety & Validation Guardrails (`backend/database/sql_validator.py`)
 To prevent model-generated hallucinations, SQL injection, or malicious data alteration:
@@ -129,20 +135,30 @@ Compares queries against actual SQLite instances using held-out Spider questions
 
 ## 4. Empirical Evaluation Results
 
-The three approaches were evaluated against identical held-out test cases. Results from `outputs/evaluation/latest_evaluation_summary.json`:
+The three approaches were evaluated live against 20 hand-verified queries across 4 databases scaling from 3 to 12 tables (`veterinary_clinic`, `film_production`, `research_grants`, `maritime_shipping`). Empirical results from `outputs/evaluation/scale_complexity_latest.json` and `latest_evaluation_summary.json`:
 
 | Metric | NVIDIA Nemotron 3.5 Lightning | Qwen Few-Shot (Base) | Qwen LoRA (Adapter) |
 | :--- | :---: | :---: | :---: |
-| **Model Size** | 30B MoE (Cloud) | 3B (Local) | 3B + 14.7MB Adapter (Local) |
+| **Model Size** | 30B MoE (Cloud API) | 3B (Local GPU) | 3B + 14.7MB Adapter (Local GPU) |
 | **SQL Validity Rate** | **100.0%** | **100.0%** | **100.0%** |
-| **Execution Success Rate** | **100.0%** | **100.0%** | **100.0%** |
-| **Execution Accuracy** | **100.0%** | **60.0%** | **100.0%** |
-| **Avg Generation Latency** | **692.71 ms** | **2,860.92 ms** | **664.36 ms** |
+| **Execution Success Rate** | **95.0%** | **90.0%** | **90.0%** |
+| **Execution Accuracy** | **85.0%** (17/20) | **85.0%** (17/20) | **85.0%** (17/20) |
+| **Avg Generation Latency** | **1,173.95 ms** | **3,132.06 ms** | **3,690.99 ms** |
 | **Offline Privacy** | No (API required) | Yes (100% Local GPU) | Yes (100% Local GPU) |
 
-### Key Analysis:
-1. **The Few-Shot vs. Fine-Tuning Gap**: Few-shot prompting on the base 3B model achieved 60% accuracy due to subtle schema misunderstandings and token length limits. LoRA fine-tuning boosted accuracy to **100%**, matching the 30B Nemotron model.
-2. **Latency Advantage of Fine-Tuning**: Few-shot prompting required sending lengthy demonstrations in every prompt, resulting in **2,860 ms** average latency. LoRA inference required no demonstration preamble, cutting latency down to **664 ms** (over **4.3x faster**).
+### Accuracy by Schema Scale:
+| Database | Schema Scale | Nemotron | Qwen Few-Shot | Qwen LoRA |
+| :--- | :---: | :---: | :---: | :---: |
+| `veterinary_clinic.db` | 3 tables | 4 / 4 (**100.0%**) | 4 / 4 (**100.0%**) | 4 / 4 (**100.0%**) |
+| `film_production.db` | 9 tables | 6 / 7 (**85.7%**) | 6 / 7 (**85.7%**) | 6 / 7 (**85.7%**) |
+| `research_grants.db` | 10 tables | 4 / 5 (**80.0%**) | 4 / 5 (**80.0%**) | 4 / 5 (**80.0%**) |
+| `maritime_shipping.db` | 12 tables | 3 / 4 (**75.0%**) | 3 / 4 (**75.0%**) | 3 / 4 (**75.0%**) |
+
+### Key Analysis & Findings:
+1. **Cloud vs. Local Accuracy Parity**: Local Qwen 3B (both Few-Shot and LoRA) matched the 30B MoE cloud Nemotron model at **85.0% execution accuracy**, proving that compact 3B coder models running on consumer hardware (RTX 4060) can achieve competitive Text-to-SQL performance against frontier cloud models.
+2. **Latency Trade-Off**: Nemotron via NVIDIA NIM was the fastest generator at **~1.17s average latency**, benefiting from high-throughput server-class MoE serving. Local GPU inference required ~3.1s–3.7s due to local autoregressive generation on an 8GB mobile GPU envelope.
+3. **Multi-Table Degradation Pattern**: All models achieved 100% accuracy on small schemas (≤3 tables). Accuracy dropped to 75% on 12-table schemas due to intermediate join-table hallucinations (e.g., trying to join `crew_assignments` directly onto `vessels` rather than bridging through the intermediate `voyages` relation).
+4. **Complete Edge Case Logs**: Detailed per-query failure logs and ground-truth comparisons are recorded in [`RESULTS.md`](RESULTS.md).
 
 ---
 
@@ -151,7 +167,7 @@ The three approaches were evaluated against identical held-out test cases. Resul
 Built as a dark-themed AI SaaS web platform using **React 19**, **Vite**, **Tailwind CSS v4**, **Lucide React**, **Recharts**, and **Axios**:
 
 1. **Overview Page** ([`LandingPage.jsx`](file:///c:/Users/pavan/OneDrive/Desktop/llm_new/frontend/src/pages/LandingPage.jsx)): Hero section, interactive pipeline flow diagram, feature cards, and research methodology.
-2. **Playground Page** ([`PlaygroundPage.jsx`](file:///c:/Users/pavan/OneDrive/Desktop/llm_new/frontend/src/pages/PlaygroundPage.jsx)): Main interactive interface. Left sidebar for database selection, upload modal, collapsible schema tree browser, and model/technique selector. Main workspace with suggested question chips, editable SQL editor, security badges, and data results table.
+2. **Playground Page** ([`PlaygroundPage.jsx`](file:///c:/Users/pavan/OneDrive/Desktop/llm_new/frontend/src/pages/PlaygroundPage.jsx)): Main interactive interface. Left sidebar for database selection (33 preloaded databases), upload modal, collapsible schema tree browser, and model/technique selector. Main workspace with suggested question chips, editable SQL editor, security badges, and data results table.
 3. **Model Comparison Page** ([`ComparisonPage.jsx`](file:///c:/Users/pavan/OneDrive/Desktop/llm_new/frontend/src/pages/ComparisonPage.jsx)): Single input triggering side-by-side execution across Nemotron, Qwen Few-Shot, and Qwen LoRA with real-time latency and SQL validity badges.
 4. **Fine-Tuning Console** ([`FineTuningLabPage.jsx`](file:///c:/Users/pavan/OneDrive/Desktop/llm_new/frontend/src/pages/FineTuningLabPage.jsx)): Hardware specs (RTX 4060 VRAM telemetry), LoRA hyperparameters, parameter efficiency calculation (~0.12%), registered adapter table, and CLI execution guide.
 5. **Evaluation Dashboard** ([`EvaluationDashboardPage.jsx`](file:///c:/Users/pavan/OneDrive/Desktop/llm_new/frontend/src/pages/EvaluationDashboardPage.jsx)): Bar charts comparing model execution accuracy, SQL validity, and inference latencies. Detailed audit table of per-question results, with CSV and JSON download buttons.
@@ -161,25 +177,48 @@ Built as a dark-themed AI SaaS web platform using **React 19**, **Vite**, **Tail
 
 ## 6. How to Run the Platform
 
-### Terminal 1: Start FastAPI Backend
-```powershell
-.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
-```
+### Option A: One-Command Scripts (Recommended)
 
-### Terminal 2: Start Vite React Frontend
+* **Start the platform** (FastAPI backend + Vite frontend + opens browser):
+  ```powershell
+  .\start.ps1
+  ```
+* **Stop the platform** (cleanly shuts down backend on port 8000 and frontend on port 5173):
+  ```powershell
+  .\stop.ps1
+  ```
+
+### Option B: Manual Two-Terminal Execution
+
+**Terminal 1: Start FastAPI Backend**
+```powershell
+.\.venv\Scripts\activate
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
+*API documentation is live at `http://127.0.0.1:8000/docs`*
+
+**Terminal 2: Start Vite React Frontend**
 ```powershell
 cd frontend
 npm run dev
 ```
-Open **`http://localhost:5173`** in your browser.
+*Web application opens at `http://localhost:5173`*
 
-### Run Automated Integration Tests
+### Run Benchmark Suite Across All Models
 ```powershell
-.venv\Scripts\python.exe scripts/test_api_endpoints.py
+.\.venv\Scripts\activate
+python scripts/run_scale_complexity_benchmark.py --models nemotron,qwen_few_shot,qwen_lora --suite scored
+```
+
+### Run Automated API Integration Tests
+```powershell
+.\.venv\Scripts\activate
+python scripts/test_api_endpoints.py
 ```
 
 ### Re-Run LoRA Training (CLI)
 ```powershell
-.venv\Scripts\python.exe scripts/run_finetuning.py
+.\.venv\Scripts\activate
+python scripts/run_finetuning.py
 ```
 
